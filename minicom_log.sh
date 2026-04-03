@@ -1,27 +1,23 @@
 #!/bin/bash 
- 
+
  # Minicom日志记录脚本 
  # 功能：使用minicom进行串口交互，同时记录带时间戳的日志 
- # 使用方法: sudo ./minicom_log.sh <设备路径> [日志文件名] 
- # 示例: sudo ./minicom_log.sh /dev/ttyACM4 ACM4.log 
- 
+ # 使用方法: sudo ./minicom_log.sh <设备路径> 
+ # 示例: sudo ./minicom_log.sh /dev/ttyACM4 
+
  # 检查参数 
- if [ $# -lt 1 ]; then 
-     echo "使用方法: $0 <设备路径> [日志文件名]" 
-     echo "示例: $0 /dev/ttyACM4 ACM4.log" 
+ if [ $# -ne 1 ]; then 
+     echo "使用方法: $0 <设备路径>" 
+     echo "示例: $0 /dev/ttyACM4" 
      exit 1 
  fi 
- 
+
  # 获取参数 
  DEVICE=$1 
- 
- # 如果提供了日志文件名，则使用提供的名称；否则基于设备名称和时间戳生成 
- if [ $# -eq 2 ]; then 
-     LOG_FILE=$2 
- else 
-     DEVICE_NAME=$(basename $DEVICE) 
-     LOG_FILE="${DEVICE_NAME}_$(date +%Y%m%d_%H%M%S).log" 
- fi 
+
+ # 基于设备名称和时间戳生成日志文件名 
+ DEVICE_NAME=$(basename $DEVICE) 
+ LOG_FILE="${DEVICE_NAME}_$(date +%Y%m%d_%H%M%S).log" 
  
  # 检查设备是否存在 
  if [ ! -e "$DEVICE" ]; then 
