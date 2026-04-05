@@ -1,7 +1,7 @@
 #!/bin/bash 
 
  # Telnet日志记录脚本 
- # 功能：执行telnet连接到指定IP和端口，同时记录带时间戳的日志 
+ # 功能：执行telnet连接到指定IP和端口，同时实时记录带时间戳的日志 
  # 使用方法: sudo ./telnet_log.sh <IP地址> <端口> 
  # 示例: sudo ./telnet_log.sh 192.168.90.90 110 
 
@@ -27,26 +27,29 @@
  echo "==============================" 
  echo "" 
 
- # 创建临时日志文件 
- TEMP_LOG=$(mktemp) 
+ # 创建命名管道用于实时处理 
+ PIPE=$(mktemp -u) 
+ mkfifo "$PIPE" 
 
- # 启动telnet，记录日志 
+ # 后台处理：实时为输出添加时间戳并写入日志文件 
+ (while read line; do 
+     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $line" 
+ done < "$PIPE" > "$LOG_FILE") & 
+
+ # 保存后台进程PID 
+ PROCESS_PID=$! 
+
+ # 启动telnet，将输出重定向到管道 
  echo "正在启动telnet..." 
- script -q -c "telnet ${TELNET_IP} ${TELNET_PORT}" "$TEMP_LOG" 
+ script -q -c "telnet ${TELNET_IP} ${TELNET_PORT}" /dev/null 2>&1 | tee "$PIPE" 
 
- # telnet退出后，处理日志文件 
- echo "" 
- echo "正在处理日志文件..." 
- awk '{ 
-     timestamp = strftime("[%Y-%m-%d %H:%M:%S] "); 
-     print timestamp $0; 
- }' "$TEMP_LOG" > "$LOG_FILE" 
+ # 清理 
+ kill $PROCESS_PID 2>/dev/null 
+ rm -f "$PIPE" 2>/dev/null 
 
  # 显示日志文件信息 
  if [ -f "$LOG_FILE" ]; then 
+     echo "" 
      echo "日志记录已完成，日志文件：$LOG_FILE" 
      echo "日志大小: $(ls -lh "$LOG_FILE" | cut -d' ' -f5)" 
- fi 
-
- # 清理 
- rm -f "$TEMP_LOG" 2>/dev/null
+ fi
