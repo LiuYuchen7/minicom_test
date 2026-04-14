@@ -38,7 +38,9 @@
  
  # 后台处理：实时为输出添加时间戳并写入日志文件 
  (while read line; do 
-     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $line" 
+     # 过滤ANSI转义序列和其他控制字符，只保留纯文本
+     clean_line=$(echo "$line" | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' | tr -d '\000-\037' | tr -d '\177')
+     echo "[$(date +'%Y-%m-%d %H:%M:%S')] $clean_line" 
  done < "$PIPE" > "$LOG_FILE") & 
  
  # 保存后台进程PID 
